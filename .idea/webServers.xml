@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="8d817ee2-2804-4616-9d8b-2748a8dbdcc0" name="172.31.238.199" url="http://172.31.238.199">
+        <fileTransfer host="172.31.238.199" port="22" rootFolder="/home/gcx" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
