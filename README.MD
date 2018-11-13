@@ -1,3 +1,3 @@
 Learn Google/Tensorflow from the beginning.
 
-Tensorflow Version r1.0
+Tensorflow Version r1.8
