@@ -43,7 +43,7 @@ def get_split(dataset):
             groups = test_split(index, row[index], dataset)
             gini = gini_index(groups, class_values)
             if gini < b_score:
-                print("get split: gini=%.3f, split_value=%.3f" % (gini, row[index]))
+                print("get better split: gini=%.3f, split_value=%.3f" % (gini, row[index]))
                 b_index, b_value, b_score, b_groups = index, row[index], gini, groups
 
     return {
@@ -93,11 +93,6 @@ def split(node, max_depth, min_size, depth):
 
 def build_tree(train, max_depth, min_size):
     root = get_split(train)
-    print("root: index: " + str(root['index']))
-    print("root: value: " + str(root['value']))
-    print("root: left_size: " + str(len(root['groups'][0])))
-    print("root: right_size: " + str(len(root['groups'][1])))
-
     split(root, max_depth, min_size, 1)
     return root
 
@@ -129,11 +124,7 @@ def predict(node, row):
 
 def cross_validation_split(dataset, n_folds):
     dataset_split = list()
-    print(dataset)
     dataset_copy = list(dataset)
-
-    print(type(dataset_copy))
-    print(dataset_copy)
     fold_size = int(len(dataset) / n_folds)
 
     for i in range(n_folds):
@@ -160,8 +151,6 @@ def evaluate(dataset, algorithm, n_folds, *args):
     scores = list()
     for fold in folds:
         train_set = list(folds)
-
-        print(folds)
         train_set.remove(fold)
         train_set = sum(train_set, [])
         test_set = list()
@@ -198,6 +187,9 @@ if __name__ == "__main__":
     min_size = 10
 
     scores = evaluate(dataset, decision_tree, n_folds, max_depth, min_size)
+    print("Folds Number: %d" % n_folds)
+    print("Max depth: %d" % max_depth)
+    print("Min size: %d" % min_size)
     print('Scores: %s' % scores)
     print('Mean Accuracy: %.3f%%' % (sum(scores) / float(len(scores))))
 
