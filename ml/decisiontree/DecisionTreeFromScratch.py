@@ -9,14 +9,23 @@ from random import randrange
 def gini_index(groups, classes):
     n_instances = float(sum(len(group) for group in groups))
 
+    """
+    gini-score = sum(p[i] * (1 - p[i]))
+               = sum(p[i]) - sum(p[i] * p[i])
+               = 1 - sum(p[i] * p[i])
+    p[i] is the proportion of group i
+    
+    sum the scores of all groups with proportion
+    """
     gini = 0.0
     for group in groups:
         size = float(len(group))
         if size == 0:
             continue
         score = 0.0
+        labels = [row[-1] for row in group]
         for class_val in classes:
-            p = [row[-1] for row in group].count(class_val) / size
+            p = labels.count(class_val) / size
             score += p * p
         gini += (1.0 - score) * (size / n_instances)
 
@@ -26,6 +35,7 @@ def gini_index(groups, classes):
 def test_split(index, value, dataset):
     left, right = list(), list()
     for row in dataset:
+        # handling continuous feature
         if row[index] < value:
             left.append(row)
         else:
@@ -43,8 +53,9 @@ def get_split(dataset):
             groups = test_split(index, row[index], dataset)
             gini = gini_index(groups, class_values)
             if gini < b_score:
-                print("get better split: gini=%.3f, split_value=%.3f" % (gini, row[index]))
                 b_index, b_value, b_score, b_groups = index, row[index], gini, groups
+
+    print("get split: feature_index=%d, gini=%.3f, split_value=%.3f" % (b_index, b_score, b_value))
 
     return {
         'index': b_index,
@@ -92,6 +103,7 @@ def split(node, max_depth, min_size, depth):
 
 
 def build_tree(train, max_depth, min_size):
+    print("new tree building...")
     root = get_split(train)
     split(root, max_depth, min_size, 1)
     return root
@@ -104,7 +116,7 @@ def load_csv(filename):
     return dataset
 
 
-def str_column_to_flost(dataset, column):
+def str_column_to_float(dataset, column):
     for row in dataset:
         row[column] = float(row[column].strip())
 
@@ -130,8 +142,8 @@ def cross_validation_split(dataset, n_folds):
     for i in range(n_folds):
         fold = list()
         while len(fold) < fold_size and len(dataset_copy) > 0:
-            # print("len: " + str(len(dataset_copy)))
             index = randrange(len(dataset_copy))
+            # fold.append(dataset_copy[index])
             fold.append(dataset_copy.pop(index))
         dataset_split.append(fold)
 
@@ -180,11 +192,11 @@ if __name__ == "__main__":
     filename = "./data/banknote/data_banknote_authentication.csv"
     dataset = load_csv(filename)
     for i in range(len(dataset[0])):
-        str_column_to_flost(dataset, i)
+        str_column_to_float(dataset, i)
 
     n_folds = 5
-    max_depth = 5
-    min_size = 10
+    max_depth = 8
+    min_size = 8
 
     scores = evaluate(dataset, decision_tree, n_folds, max_depth, min_size)
     print("Folds Number: %d" % n_folds)

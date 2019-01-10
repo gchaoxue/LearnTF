@@ -1,6 +1,9 @@
 from math import log
 from operator import itemgetter
 
+""" Decision Tree implemented by Entropy and Information Gain. 
+"""
+
 
 def create_data_set():
     dataset = [
