@@ -242,6 +242,19 @@ def random_forest(train, test, max_depth, min_size, num_tree,
     return {"train": train_predictions, "test": test_predictions}
 
 
+def dataset_describer(dataset):
+    label_values = [row[-1] for row in dataset]
+    label_classes = set(label_values)
+
+    label_class_counts = list()
+    for label_class in label_classes:
+        label_class_counts.append(label_values.count(label_class))
+    return {
+        "labels": label_classes,
+        "label_counts": label_class_counts
+    }
+
+
 if __name__ == "__main__":
     seed(1)
     filename = "./data/banknote/data_banknote_authentication.csv"
@@ -257,8 +270,11 @@ if __name__ == "__main__":
     train_subsample_num = int(len(dataset) / 5 * 4 * 0.8)
     feature_subsample_num = int((len(dataset[0])-1) * 0.8)
 
+    labels = dataset_describer(dataset)
     print("data number of rows: %d" % len(dataset))
     print("data number of features: %d" % num_feature)
+    print("labels: %s" % labels["labels"])
+    print("label counts: %s" % labels["label_counts"])
     print("folds number: %d" % n_folds)
     print("size of each fold: %d" % (len(dataset) / n_folds))
     print("max depth: %d" % max_depth)
@@ -268,7 +284,6 @@ if __name__ == "__main__":
 
     # decision tree evaluate
     scores = evaluate(dataset, decision_tree, n_folds, max_depth, min_size)
-
     print('decision tree train scores: %s' % scores["train"])
     print('decision tree test scores:  %s' % scores["test"])
     print('decision tree mean accuracy: train=%.3f%%, test=%.3f%%' %
