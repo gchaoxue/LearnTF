@@ -75,6 +75,12 @@ def to_terminal(group):
     return max(set(outcomes), key=outcomes.count)
 
 
+def to_score_terminal(group):
+    outcomes = [row[-1] for row in group]
+    distribute = dict()
+
+
+
 def split(node, max_depth, min_size, depth, feature_subsample_num):
     """
         node:
@@ -88,21 +94,21 @@ def split(node, max_depth, min_size, depth, feature_subsample_num):
     del(node['groups'])
 
     if not left or not right:
-        node['left'] = node['right'] = to_terminal(left + right)
+        node['left'] = node['right'] = to_score_terminal(left + right)
         return
 
     if depth >= max_depth:
-        node['left'], node['right'] = to_terminal(left), to_terminal(right)
+        node['left'], node['right'] = to_score_terminal(left), to_score_terminal(right)
         return
 
     if len(left) <= min_size:
-        node['left'] = to_terminal(left)
+        node['left'] = to_score_terminal(left)
     else:
         node['left'] = get_split(left, feature_subsample_num)
         split(node['left'], max_depth, min_size, depth+1, feature_subsample_num)
 
     if len(right) <= min_size:
-        node['right'] = to_terminal(right)
+        node['right'] = to_score_terminal(right)
     else:
         node['right'] = get_split(right, feature_subsample_num)
         split(node['right'], max_depth, min_size, depth+1, feature_subsample_num)
@@ -135,6 +141,19 @@ def predict(node, row):
     else:
         if isinstance(node['right'], dict):
             return predict(node['right'], row)
+        else:
+            return node['right']
+
+
+def predict_score(node, row):
+    if row[node['index'] < node['value']]:
+        if (isinstance(node['left'], dict)):
+            return predict_score(node['left'], row)
+        else:
+            return node['left']
+    else:
+        if isinstance(node['right'], dict):
+            return predict_score(node['right'], row)
         else:
             return node['right']
 
