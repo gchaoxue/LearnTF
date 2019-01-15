@@ -6,6 +6,9 @@ from random import seed
 from random import randrange
 from random import sample
 
+positive_class_value = 0.0
+negative_class_value = 1.0
+hyper_threshold = 0.5
 
 def gini_index(groups, classes):
     n_instances = float(sum(len(group) for group in groups))
@@ -41,7 +44,6 @@ def test_split(index, value, dataset):
             left.append(row)
         else:
             right.append(row)
-
     return left, right
 
 
@@ -70,15 +72,15 @@ def get_split(dataset, feature_subsample_num):
     }
 
 
-def to_terminal(group):
-    outcomes = [row[-1] for row in group]
-    return max(set(outcomes), key=outcomes.count)
-
-
 def to_score_terminal(group):
+    # for binary classification
     outcomes = [row[-1] for row in group]
-    distribute = dict()
-
+    print("--------------")
+    print("positive count: " + str(outcomes.count(positive_class_value)))
+    print("group count: " + str(len(outcomes)))
+    print("positive rate: " + str(outcomes.count(positive_class_value) / len(outcomes)))
+    print("max count class: " + str(max(outcomes, key=outcomes.count)))
+    return outcomes.count(positive_class_value) / len(outcomes)
 
 
 def split(node, max_depth, min_size, depth, feature_subsample_num):
@@ -132,22 +134,18 @@ def str_column_to_float(dataset, column):
         row[column] = float(row[column].strip())
 
 
-def predict(node, row):
-    if row[node['index']] < node['value']:
-        if isinstance(node['left'], dict):
-            return predict(node['left'], row)
-        else:
-            return node['left']
+def predict(node, row, threshold):
+    positive_score = predict_score(node, row)
+    print("pre_score: " + str(positive_score))
+    if positive_score >= threshold:
+        return positive_class_value
     else:
-        if isinstance(node['right'], dict):
-            return predict(node['right'], row)
-        else:
-            return node['right']
+        return negative_class_value
 
 
 def predict_score(node, row):
     if row[node['index'] < node['value']]:
-        if (isinstance(node['left'], dict)):
+        if isinstance(node['left'], dict):
             return predict_score(node['left'], row)
         else:
             return node['left']
@@ -161,7 +159,7 @@ def predict_score(node, row):
 def predict_random_forest(forest, row):
     candidate = list()
     for tree in forest:
-        candidate.append(predict(tree, row))
+        candidate.append(predict(tree, row, hyper_threshold))
     return max(candidate, key=candidate.count)
 
 
@@ -182,6 +180,11 @@ def cross_validation_split(dataset, n_folds):
 
 
 def accuracy_metric(actual, predicted):
+    print("============")
+    print(len(predicted))
+    print(actual[-10:])
+    print(predicted[-10:])
+    print(predicted.count(negative_class_value))
     correct = 0
     for i in range(len(actual)):
         if actual[i] == predicted[i]:
@@ -215,16 +218,42 @@ def evaluate(dataset, algorithm, n_folds, *args):
     return {"train": train_scores, "test": test_scores}
 
 
+def draw_roc(dataset, model, predictor):
+    dataset = dataset[:10]
+    actual = [row[-1] for row in dataset]
+    scores = list()
+    for row in dataset:
+        score = predictor(model, row)
+        scores.append(score)
+    scores_and_actual = list()
+    for i in range(len(scores)):
+        scores_and_actual.append((scores[i], actual[i]))
+    scores_and_actual = sorted(scores_and_actual)
+    step_num = len(dataset)
+    step_len = 1 / step_num
+    x, y = 0, 0
+    roc_points = list()
+    roc_points.append((x, y))
+    for e in scores_and_actual:
+        if e[1] == positive_class_value:
+            y += step_len
+        else:
+            x += step_len
+        roc_points.append((x, y))
+    print(roc_points)
+
+
 def decision_tree(train, test, max_depth, min_size):
     tree = build_tree(train, max_depth, min_size, len(train[0]) - 1)
     test_predictions = list()
     train_predictions = list()
     for row in test:
-        prediction = predict(tree, row)
+        prediction = predict(tree, row, hyper_threshold)
         test_predictions.append(prediction)
     for row in train:
-        prediction = predict(tree, row)
+        prediction = predict(tree, row, hyper_threshold)
         train_predictions.append(prediction)
+    draw_roc(test, tree, predict_score)
     return {"train": train_predictions, "test": test_predictions}
 
 
@@ -283,7 +312,7 @@ if __name__ == "__main__":
 
     num_feature = len(dataset[0]) - 1
     n_folds = 4
-    max_depth = 5
+    max_depth = 3
     min_size = 50
     num_tree = 15
     train_subsample_num = int(len(dataset) / 5 * 4 * 0.8)
