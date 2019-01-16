@@ -10,6 +10,7 @@ positive_class_value = 0.0
 negative_class_value = 1.0
 hyper_threshold = 0.5
 
+
 def gini_index(groups, classes):
     n_instances = float(sum(len(group) for group in groups))
 
@@ -136,6 +137,8 @@ def str_column_to_float(dataset, column):
 
 def predict(node, row, threshold):
     positive_score = predict_score(node, row)
+    print("--------------")
+    print(row)
     print("pre_score: " + str(positive_score))
     if positive_score >= threshold:
         return positive_class_value
@@ -144,7 +147,7 @@ def predict(node, row, threshold):
 
 
 def predict_score(node, row):
-    if row[node['index'] < node['value']]:
+    if row[node['index']] < node['value']:
         if isinstance(node['left'], dict):
             return predict_score(node['left'], row)
         else:
@@ -181,10 +184,10 @@ def cross_validation_split(dataset, n_folds):
 
 def accuracy_metric(actual, predicted):
     print("============")
-    print(len(predicted))
-    print(actual[-10:])
+    print("predicted count: " + str(len(predicted)))
+    print("positive count: " + str(predicted.count(negative_class_value)))
     print(predicted[-10:])
-    print(predicted.count(negative_class_value))
+    print(actual[-10:])
     correct = 0
     for i in range(len(actual)):
         if actual[i] == predicted[i]:
@@ -248,10 +251,10 @@ def decision_tree(train, test, max_depth, min_size):
     test_predictions = list()
     train_predictions = list()
     for row in test:
-        prediction = predict(tree, row, hyper_threshold)
+        prediction = predict(tree, row[:4], hyper_threshold)
         test_predictions.append(prediction)
     for row in train:
-        prediction = predict(tree, row, hyper_threshold)
+        prediction = predict(tree, row[:4], hyper_threshold)
         train_predictions.append(prediction)
     draw_roc(test, tree, predict_score)
     return {"train": train_predictions, "test": test_predictions}
@@ -312,7 +315,7 @@ if __name__ == "__main__":
 
     num_feature = len(dataset[0]) - 1
     n_folds = 4
-    max_depth = 3
+    max_depth = 5
     min_size = 50
     num_tree = 15
     train_subsample_num = int(len(dataset) / 5 * 4 * 0.8)
@@ -339,11 +342,11 @@ if __name__ == "__main__":
            sum(scores["test"]) / float(len(scores["test"]))))
 
     # random forest
-    scores = evaluate(dataset, random_forest, n_folds, max_depth, min_size, num_tree,
-                      train_subsample_num, feature_subsample_num)
-    print('random forest train scores: %s' % scores["train"])
-    print('random forest test scores:  %s' % scores["test"])
-    print('random forest mean accuracy: train=%.3f%%, test=%.3f%%' %
-          (sum(scores["train"]) / float(len(scores["train"])),
-           sum(scores["test"]) / float(len(scores["test"]))))
+    # scores = evaluate(dataset, random_forest, n_folds, max_depth, min_size, num_tree,
+    #                   train_subsample_num, feature_subsample_num)
+    # print('random forest train scores: %s' % scores["train"])
+    # print('random forest test scores:  %s' % scores["test"])
+    # print('random forest mean accuracy: train=%.3f%%, test=%.3f%%' %
+    #       (sum(scores["train"]) / float(len(scores["train"])),
+    #        sum(scores["test"]) / float(len(scores["test"]))))
 
