@@ -1,10 +1,10 @@
 """ https://machinelearningmastery.com/implement-decision-tree-algorithm-scratch-python/
 """
 from _csv import reader
-
 from random import seed
 from random import randrange
 from random import sample
+from matplotlib import pyplot
 
 positive_class_value = 0.0
 negative_class_value = 1.0
@@ -218,46 +218,59 @@ def evaluate(dataset, algorithm, n_folds, *args):
               (len(train_set), len(test_set), train_accuracy, test_accuracy))
         train_scores.append(train_accuracy)
         test_scores.append(test_accuracy)
+        draw_roc(fold, prediction['model'], predict_score)
+        break
     return {"train": train_scores, "test": test_scores}
 
 
 def draw_roc(dataset, model, predictor):
-    dataset = dataset[:10]
     actual = [row[-1] for row in dataset]
+    pos_num = actual.count(positive_class_value)
+    pos_len = 1 / pos_num
+    neg_num = actual.count(negative_class_value)
+    neg_len = 1 / neg_num
     scores = list()
     for row in dataset:
         score = predictor(model, row)
         scores.append(score)
     scores_and_actual = list()
-    for i in range(len(scores)):
+    for i in range(len(dataset)):
         scores_and_actual.append((scores[i], actual[i]))
-    scores_and_actual = sorted(scores_and_actual)
-    step_num = len(dataset)
-    step_len = 1 / step_num
+    scores_and_actual = sorted(scores_and_actual, reverse=True)
     x, y = 0, 0
     roc_points = list()
     roc_points.append((x, y))
     for e in scores_and_actual:
         if e[1] == positive_class_value:
-            y += step_len
+            y += pos_len
         else:
-            x += step_len
+            x += neg_len
         roc_points.append((x, y))
-    print(roc_points)
+    xp = [p[0] for p in roc_points]
+    yp = [p[1] for p in roc_points]
+    print("draw roc ========")
+    print("point num: " + str(len(roc_points)))
+    print(xp[-1], yp[-1])
+    pyplot.scatter(xp, yp, s=1, facecolors='none', edgecolors='red')
+    pyplot.show()
 
 
 def decision_tree(train, test, max_depth, min_size):
     tree = build_tree(train, max_depth, min_size, len(train[0]) - 1)
     test_predictions = list()
     train_predictions = list()
+
     for row in test:
-        prediction = predict(tree, row[:4], hyper_threshold)
+        prediction = predict(tree, row, hyper_threshold)
         test_predictions.append(prediction)
     for row in train:
         prediction = predict(tree, row[:4], hyper_threshold)
         train_predictions.append(prediction)
-    draw_roc(test, tree, predict_score)
-    return {"train": train_predictions, "test": test_predictions}
+    return {
+        "train": train_predictions,
+        "test": test_predictions,
+        "model": tree
+    }
 
 
 def build_forest(train, max_depth, min_size, num_tree,
@@ -314,9 +327,9 @@ if __name__ == "__main__":
         str_column_to_float(dataset, i)
 
     num_feature = len(dataset[0]) - 1
-    n_folds = 4
-    max_depth = 5
-    min_size = 50
+    n_folds = 8
+    max_depth = 6
+    min_size = 30
     num_tree = 15
     train_subsample_num = int(len(dataset) / 5 * 4 * 0.8)
     feature_subsample_num = int((len(dataset[0])-1) * 0.8)
